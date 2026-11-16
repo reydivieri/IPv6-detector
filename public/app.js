@@ -1,16 +1,19 @@
 import { japanese, translate } from './i18n.js';
+import { createNetworkDiagram } from './network-graph.js';
 
 const $ = id => document.getElementById(id);
 const text = (tag, content, className) => { const element = document.createElement(tag); element.textContent = content; if (className) element.className = className; return element; };
 let report, traceReport, shutdownToken;
 let language = 'en', scanning = false, tracing = false, stopped = false;
 let scanState = { kind: 'idle' }, traceState = { kind: 'idle' };
+let diagram, savingImage = false, diagramMessage = '';
 try { language = document.cookie.match(/(?:^|;\s*)ipv6-detector-language=(en|ja)(?:;|$)/)?.[1] || localStorage.getItem('ipv6-detector-language') || 'en'; } catch {}
 if (!['en', 'ja'].includes(language)) language = 'en';
 const t = (key, parameters) => translate(key, language, parameters);
 const value = item => item === null || item === undefined || item === '' ? t('Not available') : String(item).trim();
 const date = timestamp => new Date(timestamp).toLocaleString(language === 'ja' ? 'ja-JP' : 'en-US');
 const navigation = text('a', '⇄ Network paths'); navigation.href = '#paths'; document.querySelector('nav').append(navigation);
+const diagramNavigation = text('a', '◇ Network path diagram'); diagramNavigation.href = '#diagram'; document.querySelector('nav').append(diagramNavigation);
 
 // Capture only the initial static text. Dynamic values are rendered explicitly below.
 const staticBindings = [];
@@ -33,6 +36,9 @@ function renderControls() {
   $('quit').textContent = t(stopped ? 'App stopped' : 'Shut down app');
   $('export').textContent = t('↓ Export report');
   $('export').disabled = !report;
+  $('save-svg').textContent = t('Save SVG'); $('save-svg').disabled = !diagram || savingImage;
+  $('save-png').textContent = t(savingImage ? 'Saving image…' : 'Save PNG'); $('save-png').disabled = !diagram || savingImage;
+  $('diagram-message').textContent = diagramMessage ? t(diagramMessage) : '';
 }
 function renderMessages() {
   $('message').className = scanState.kind === 'error' ? 'error' : '';
@@ -57,6 +63,7 @@ function setLanguage() {
   renderControls(); renderMessages();
   if (report) renderReport();
   if (traceReport) renderTraces();
+  renderDiagram();
 }
 $('language').addEventListener('change', () => {
   language = $('language').value === 'ja' ? 'ja' : 'en';
@@ -125,7 +132,7 @@ function renderReport() {
   $('check-count').textContent = `${assessment.checks.filter(check => check.status === 'pass').length} / ${assessment.checks.length}`;
   $('recommendations').replaceChildren(...assessment.recommendations.map(item => text('li', t(item))));
   $('timestamp').textContent = t('Last scan {date} · {seconds}s', { date: date(report.scannedAt), seconds: (report.durationMs / 1000).toFixed(1) });
-  renderAdapters(); renderRouting();
+  renderAdapters(); renderRouting(); renderDiagram();
 }
 const findingMessages = {
   noDefault: '{family}: no active default route was confirmed. A more-specific route may still serve particular destinations.',
@@ -174,7 +181,54 @@ function renderTraces() {
     else $('traces').append(table(['Hop', 'Responding address', 'Round-trip samples'], trace.hops.map(hop => [String(hop.number), hop.responded ? hop.addresses.join(', ') : t('No response / unknown'), [...hop.timesMs.map(time => `${time} ms`), ...Array(hop.unansweredProbes).fill('*')].join(' / ') || t('Unknown')])));
   }
   $('traces').append(text('p', t('Router / ISP ownership is not identified by this test.')));
+  renderDiagram();
 }
+function renderDiagram() {
+  $('diagram-canvas').setAttribute('aria-label', t('Network path diagram'));
+  $('diagram-canvas').setAttribute('role', 'region');
+  $('diagram-canvas').tabIndex = 0;
+  if (!report && !traceReport) {
+    diagram = null; $('diagram-canvas').className = 'empty';
+    $('diagram-canvas').textContent = t('Run diagnostics or traceroute to create the diagram.');
+  } else {
+    diagram = createNetworkDiagram(report, traceReport, language);
+    $('diagram-canvas').className = 'diagram-canvas';
+    // The generator uses only fixed SVG elements and XML-escaped diagnostic text.
+    $('diagram-canvas').innerHTML = diagram.svg;
+  }
+  renderControls();
+}
+function download(blob, filename) {
+  const url = URL.createObjectURL(blob), link = document.createElement('a');
+  link.href = url; link.download = filename; document.body.append(link); link.click(); link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+function diagramFilename(extension, selectedLanguage) {
+  return `ipv6-path-${(traceReport?.tracedAt || report?.scannedAt || new Date().toISOString()).replace(/[:.]/g, '-')}-${selectedLanguage}.${extension}`;
+}
+$('save-svg').addEventListener('click', () => {
+  if (!diagram) return;
+  download(new Blob([diagram.svg], { type: 'image/svg+xml;charset=utf-8' }), diagramFilename('svg', language));
+  diagramMessage = 'Diagram download started.'; renderControls();
+});
+$('save-png').addEventListener('click', async () => {
+  if (!diagram || savingImage) return;
+  const snapshot = diagram, selectedLanguage = language, filename = diagramFilename('png', selectedLanguage);
+  const url = URL.createObjectURL(new Blob([snapshot.svg], { type: 'image/svg+xml;charset=utf-8' }));
+  savingImage = true; diagramMessage = ''; renderControls();
+  try {
+    const image = new Image(); image.src = url; await image.decode();
+    const canvas = document.createElement('canvas');
+    const scale = Math.min(2, Math.sqrt(16000000 / (snapshot.width * snapshot.height)));
+    canvas.width = Math.max(1, Math.round(snapshot.width * scale)); canvas.height = Math.max(1, Math.round(snapshot.height * scale));
+    const context = canvas.getContext('2d');
+    if (!context) throw new Error('PNG creation unavailable');
+    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+    const png = await new Promise((resolve, reject) => canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('PNG creation failed')), 'image/png'));
+    download(png, filename); diagramMessage = 'Diagram download started.';
+  } catch { diagramMessage = 'Could not save diagram. Try Save SVG instead.'; }
+  finally { URL.revokeObjectURL(url); savingImage = false; renderControls(); }
+});
 $('scan').addEventListener('click', async () => {
   scanning = true; scanState = { kind: 'running' }; renderControls(); renderMessages();
   try {

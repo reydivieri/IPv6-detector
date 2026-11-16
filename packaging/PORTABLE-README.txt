@@ -7,6 +7,8 @@ IPv6 Detector - Portable for Windows x64
 4. Click Run diagnostics to inspect THIS computer.
    Choose English or Japanese from the Language menu.
    Click Trace IPv4 / IPv6 separately to inspect the outbound internet path.
+   The Diagram & response times panel visualizes both IPv4 and IPv6.
+   Use Save SVG or Save PNG to download the diagram as an image.
 5. Click Shut down app when finished. You can also press Ctrl+C in the
    application console. Closing the browser tab alone does not stop the app.
 
@@ -44,6 +46,10 @@ Cloudflare. They cannot establish the ISP-to-device return path or identify the
 owner of every hop. A timeout is unknown, not proof of an unnecessary/broken hop.
 Multiple default routes, virtual adapters and VPN routes can be intentional.
 Route observations identify things to review; no routes are removed or disabled.
+The diagram separates configured local routes from observed traceroute hops.
+RTT bars show the lowest returned round-trip time per hop, not link latency.
+Missing replies remain unknown and are not shown as zero-latency responses.
+Both SVG and PNG image exports include network addresses. Review before sharing.
 
 IPv6 connectivity requires a working operating-system/adapter configuration,
 router and upstream network path. CPU and RAM are shown for reference, not

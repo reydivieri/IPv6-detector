@@ -14,7 +14,7 @@ async function stop(server) { server.closeAllConnections(); if (server.listening
 test('serves local assets on the actual assigned port and rejects missing files', async () => {
   const { server, url } = await start();
   try {
-    for (const path of ['/', '/app.js', '/style.css', '/i18n.js']) { const result = await fetch(url + path); assert.equal(result.status, 200); assert.ok((await result.text()).length > 0); }
+    for (const path of ['/', '/app.js', '/style.css', '/i18n.js', '/network-graph.js']) { const result = await fetch(url + path); assert.equal(result.status, 200); assert.ok((await result.text()).length > 0); }
     assert.equal((await fetch(url + '/missing')).status, 404);
     assert.equal((await fetch(url + '/', { method: 'POST' })).status, 405);
     const info = await (await fetch(url + '/api/app')).json();

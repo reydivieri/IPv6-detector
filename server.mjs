@@ -5,7 +5,7 @@ import { scan } from './lib/diagnostics.mjs';
 import { randomBytes } from 'node:crypto';
 import { tracePaths } from './lib/paths.mjs';
 
-const assets = { '/': ['index.html', 'text/html'], '/app.js': ['app.js', 'text/javascript'], '/i18n.js': ['i18n.js', 'text/javascript'], '/style.css': ['style.css', 'text/css'] };
+const assets = { '/': ['index.html', 'text/html'], '/app.js': ['app.js', 'text/javascript'], '/i18n.js': ['i18n.js', 'text/javascript'], '/network-graph.js': ['network-graph.js', 'text/javascript'], '/style.css': ['style.css', 'text/css'] };
 export function createDetectorServer({ scanDevice = scan, traceDevice = tracePaths, onShutdown } = {}) {
 let pending;
 let latest;
@@ -15,7 +15,7 @@ const shutdownToken = onShutdown ? randomBytes(32).toString('hex') : null;
 const server = http.createServer(async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('Content-Security-Policy', "default-src 'self'; style-src 'self'; script-src 'self'; connect-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'none'");
+  res.setHeader('Content-Security-Policy', "default-src 'self'; img-src 'self' blob:; style-src 'self'; script-src 'self'; connect-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'none'");
   const port = server.address()?.port;
   if (![`127.0.0.1:${port}`, `localhost:${port}`].includes(req.headers.host)) { res.writeHead(403).end('Invalid host'); return; }
   if (req.url === '/api/shutdown' && onShutdown && req.method === 'POST') {

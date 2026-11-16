@@ -1,4 +1,23 @@
 export const japanese = {
+  'Network path diagram': 'ネットワーク経路図',
+  'IPv4 and IPv6 · local configuration and observed outward hops': 'IPv4 と IPv6 · ローカル設定と外向きホップの観測',
+  'Local route snapshot': 'ローカル経路の取得時点', 'Traceroute snapshot': '経路調査の取得時点',
+  'Configured / local context': '設定情報 / ローカル情報', 'Responding hop': '応答したホップ', 'Unknown / not confirmed': '不明 / 未確認',
+  'Windows-selected route': 'Windows が選択した経路', 'Other default route — review only': 'その他のデフォルトルート — 確認用',
+  'Run diagnostics to inspect local routing.': '診断を実行してローカル経路を確認してください。',
+  'This device · trace origin': 'このデバイス · 経路調査の起点', 'The trace starts on this device.': '経路調査はこのデバイスから開始します。',
+  'Run traceroute to observe upstream hops.': '経路調査を実行して上流のホップを確認してください。',
+  'Destination not confirmed by this trace': 'この経路調査では宛先への到達は未確認', 'Destination not traced': '宛先への経路は未調査',
+  'Observed traceroute · outward': '観測した経路 · 外向き', 'Lowest RTT: {value} ms': '最小 RTT: {value} ms',
+  'Arrows show probe order, not physical cables or the ISP-to-device return path.': '矢印はプローブの順序を示します。物理配線や ISP からデバイスへの戻り経路ではありません。',
+  'Unknown replies and alternative routes do not prove a broken or unnecessary path.': '応答不明のホップや代替経路があっても、障害や不要な経路とは判断できません。',
+  'Bars show the lowest returned RTT per hop, not per-link latency. <1 is an upper bound; missing replies have no bar.': 'バーは各ホップの最小応答 RTT を示し、リンク単体の遅延ではありません。<1 は上限を表し、応答がない場合はバーを表示しません。',
+  'Local route and trace snapshots can differ in time. Hop ownership is not verified.': 'ローカル経路と経路調査の取得時刻は異なる場合があります。各ホップの管理者は未確認です。',
+  'Diagram & response times': '経路図と応答時間', 'See local routing and observed hops for each protocol.': '各プロトコルのローカル経路と観測したホップを図で確認できます。',
+  'Save SVG': 'SVG を保存', 'Save PNG': 'PNG を保存', 'Run diagnostics or traceroute to create the diagram.': '診断または経路調査を実行すると経路図が表示されます。',
+  'Saving image…': '画像を保存中…', 'Diagram saved.': '経路図の保存を開始しました。', 'Could not save diagram.': '経路図を保存できませんでした。',
+  'Diagram download started.': '経路図のダウンロードを開始しました。', 'Could not save diagram. Try Save SVG instead.': '経路図を保存できませんでした。SVG での保存をお試しください。',
+  'Saved images include network addresses. Review them before sharing.': '保存する画像にはネットワークアドレスが含まれます。共有する前に確認してください。',
   'Main navigation': 'メインナビゲーション', 'Summary': '概要', 'Connection timed out': '接続がタイムアウトしました', 'DNS timed out': 'DNS がタイムアウトしました',
   'IPv6 Detector — Network intelligence': 'IPv6 Detector — ネットワーク診断',
   'LOCAL WORKSPACE': 'ローカルワークスペース', 'Overview': '概要', 'Network adapters': 'ネットワークアダプター', 'Device readiness': 'デバイスの対応状況', 'Diagnostics': '診断', 'Network paths': 'ネットワーク経路',
@@ -68,6 +87,6 @@ export const japanese = {
   'pass': '成功', 'warn': '確認が必要', 'unknown': '不明'
 };
 export function translate(key, language = 'en', parameters = {}) {
-  const message = language === 'ja' ? japanese[key] || key : key;
+  const message = language === 'ja' && Object.hasOwn(japanese, key) ? japanese[key] : key;
   return message.replace(/\{(\w+)\}/g, (match, name) => Object.hasOwn(parameters, name) ? String(parameters[name]) : match);
 }

@@ -41,6 +41,17 @@ If your organization blocks scripts or network inspection, ask its administrator
 - Windows-selected routes to the IPv4/IPv6 test targets, full ActiveStore route inventory in JSON, default routes and combined route/interface metrics.
 - Observations for equal-priority default routes, alternative or disconnected default routes, active virtual adapters and VPN-style /1 routes.
 - Separate IPv4/IPv6 traceroutes, with responding hop addresses, RTT samples, unknown hops and explicit partial-result states.
+- A bilingual network diagram with separate IPv4/IPv6 lanes, local route context, observed hop order and minimum-response RTT bars. Save the current view as a standalone SVG or PNG image.
+
+## Network diagram and image export
+
+After **Run diagnostics** or **Trace IPv4 / IPv6**, the **Diagram & response times** panel displays the available data. Run both commands for local configuration and observed hops. Blue cards show local configuration/context, green cards show responding hops, and dashed gray cards show unknown or unconfirmed observations. Other default routes appear separately for review; they are not drawn as measured internet hops or classified as unnecessary.
+
+The diagram keeps local-inventory and traceroute timestamps separate. Arrows show probe order, not physical cables or the reverse ISP-to-device path. A destination is marked reached in the diagram only when a parsed hop contains the actual target address. Successful TLS alone does not invent traceroute replies. A missing reply stays unknown and is never rendered as a zero-millisecond response.
+
+RTT bars use the same scale across both lanes and show the lowest returned probe RTT at each hop. These are round-trip measurements to that hop, not latency contributed by an individual link. Values such as `<1 ms` retain their upper-bound label; the bar uses that bound without inventing a fractional measurement. No bar is drawn without a usable sample.
+
+**Save SVG** downloads a vector image with embedded labels, diagram elements and explanations. **Save PNG** rasterizes that same SVG locally in the browser, at up to 2x resolution with a 16-megapixel canvas limit. Neither option contacts a third-party rendering service. The image uses the selected English/Japanese language. A PNG failure offers SVG as an alternative. Images include addresses and routing details; review them before sharing. The on-screen panel scrolls for long traces, while exported images include the full diagram.
 
 ## Network paths and interpretation
 
@@ -105,4 +116,4 @@ node --check lib/diagnostics.mjs
 node --check public/app.js
 ```
 
-Automated tests cover address classification and readiness decisions, including link-local-only connectivity, tentative addresses, disconnected adapters and unknown bindings. HTTP tests cover local assets, Host validation, concurrent scan caching, failed-scan recovery and authenticated portable shutdown. Validate actual connectivity on more than one network before relying on results for operational decisions.
+Automated tests cover address classification and readiness decisions, including link-local-only connectivity, tentative addresses, disconnected adapters and unknown bindings. HTTP tests cover local assets, Host validation, concurrent scan caching, failed-scan recovery and authenticated portable shutdown. Diagram tests cover configuration-versus-observation separation, silent hops, upper-bound RTTs, unconfirmed targets, Japanese labels, long traces and XML escaping. Validate actual connectivity on more than one network before relying on results for operational decisions.

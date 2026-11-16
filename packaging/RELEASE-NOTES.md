@@ -1,6 +1,14 @@
-IPv6 Detector 1.1.0 adds Japanese language selection, local route analysis and IPv4/IPv6 traceroute to the portable Windows dashboard.
+IPv6 Detector 1.2.0 adds a bilingual network diagram and SVG/PNG image export to the portable Windows dashboard.
 
-## New in 1.1.0
+## New in 1.2.0
+
+- A graphical network view with separate IPv4 and IPv6 lanes, local route context, observed hop order and minimum-response RTT bars.
+- Blue cards for local configuration, green cards for responding hops and dashed gray cards for unknown/unconfirmed observations.
+- Save the complete diagram as a standalone **SVG** or **PNG**, in the currently selected English/Japanese language. Rendering stays on the device.
+- Local inventory and traceroute timestamps remain separate. Other default routes are not drawn as measured internet hops. Missing replies are not shown as zero-latency samples.
+- A scrollable diagram panel for long paths; image exports contain the full diagram.
+
+## Included features
 
 - Switch between **English** and **日本語**, including diagnostic explanations and recommendations. The language preference is remembered in the browser across portable launches on the same loopback host.
 - Inspect the routes Windows selects for the test targets, along with default routes and combined route/interface metrics.
@@ -14,7 +22,8 @@ IPv6 Detector 1.1.0 adds Japanese language selection, local route analysis and I
 2. Extract the archive and double-click **IPv6-Detector.exe**.
 3. Click **Run diagnostics** in the browser dashboard.
 4. Choose your language and click **Trace IPv4 / IPv6** to inspect upstream hops.
-5. Click **Shut down app** when finished.
+5. View **Diagram & response times**, then choose **Save SVG** or **Save PNG** if needed.
+6. Click **Shut down app** when finished.
 
 Node.js and npm do not need to be installed on the target device. Keep the included Node.js runtime license with the executable when redistributing it. A SHA-256 checksum file is provided alongside the archive.
 
@@ -37,4 +46,4 @@ Node.js and npm do not need to be installed on the target device. Keep the inclu
 
 ## Validation
 
-All 21 automated tests passed, covering readiness, HTTP behavior, route observations, trace parsing and Japanese translations. The portable EXE is tested in an isolated folder with Node.js removed from PATH, including bilingual assets, a real Windows device/route scan, IPv4/IPv6 traceroute and clean shutdown. Testing on a separate physical computer and visual browser verification remain outstanding.
+All 28 automated tests passed, covering readiness, HTTP behavior, route observations, trace parsing, Japanese translations and diagram semantics/escaping. The portable smoke test checks the EXE in an isolated folder without Node.js on PATH, including bundled diagram assets, a real Windows device/route scan, IPv4/IPv6 traceroute and clean shutdown. English and Japanese SVG diagrams were rasterized and visually inspected using synthetic data. Testing on a separate physical computer and browser interaction/download verification remain outstanding.

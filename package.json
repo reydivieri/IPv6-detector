@@ -1,9 +1,9 @@
 {
   "name": "ipv6-detector",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "private": true,
   "description": "Local Windows network and IPv6 readiness dashboard",
   "type": "module",
-  "scripts": { "start": "node server.mjs", "start:portable": "node portable.mjs", "build:portable": "node scripts/build-portable.mjs", "test": "node test/diagnostics.test.mjs && node test/server.test.mjs && node test/paths.test.mjs", "test:portable": "node scripts/test-portable.mjs" },
+  "scripts": { "start": "node server.mjs", "start:portable": "node portable.mjs", "build:portable": "node scripts/build-portable.mjs", "test": "node test/diagnostics.test.mjs && node test/server.test.mjs && node test/paths.test.mjs && node test/network-graph.test.mjs", "test:portable": "node scripts/test-portable.mjs" },
   "engines": { "node": ">=22" }
 }

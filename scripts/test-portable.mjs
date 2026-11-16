@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { once } from 'node:events';
 import assert from 'node:assert/strict';
+import { createNetworkDiagram } from '../public/network-graph.js';
 
 const temporary = await mkdtemp(join(tmpdir(), 'ipv6-portable-test-'));
 let child;
@@ -27,7 +28,7 @@ try {
       if (found) { clearTimeout(timer); resolve(found[0]); }
     });
   });
-  for (const path of ['/', '/app.js', '/style.css', '/i18n.js']) {
+  for (const path of ['/', '/app.js', '/style.css', '/i18n.js', '/network-graph.js']) {
     const response = await fetch(url + path); assert.equal(response.status, 200); assert.ok((await response.text()).length > 100);
   }
   const response = await fetch(url + '/api/scan', { signal: AbortSignal.timeout(55000) });
@@ -41,6 +42,10 @@ try {
   assert.equal(traceResponse.status, 200);
   const trace = await traceResponse.json(); assert.equal(trace.traces.length, 2);
   for (const path of trace.traces) { assert.ok(Array.isArray(path.hops)); assert.equal(path.maxHops, 16); }
+  for (const language of ['en', 'ja']) {
+    const { svg, height } = createNetworkDiagram(result, trace, language);
+    assert.ok(svg.includes(`lang="${language}"`)); assert.ok(height > 600);
+  }
   const info = await (await fetch(url + '/api/app')).json(); assert.equal(info.portable, true);
   const shutdown = await fetch(url + '/api/shutdown', { method: 'POST', headers: { 'X-Detector-Token': info.shutdownToken, Origin: url } });
   assert.equal(shutdown.status, 200); await shutdown.json();
