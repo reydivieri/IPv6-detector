@@ -27,7 +27,7 @@ try {
       if (found) { clearTimeout(timer); resolve(found[0]); }
     });
   });
-  for (const path of ['/', '/app.js', '/style.css']) {
+  for (const path of ['/', '/app.js', '/style.css', '/i18n.js']) {
     const response = await fetch(url + path); assert.equal(response.status, 200); assert.ok((await response.text()).length > 100);
   }
   const response = await fetch(url + '/api/scan', { signal: AbortSignal.timeout(55000) });
@@ -35,12 +35,18 @@ try {
   assert.equal(response.status, 200, JSON.stringify(result));
   assert.equal(result.system.hostname.toLowerCase(), hostname().toLowerCase());
   assert.ok(Array.isArray(result.adapters)); assert.equal(result.assessment.checks.length, 6);
+  assert.ok(Array.isArray(result.routeTable)); assert.ok(Array.isArray(result.routing.defaults));
+  assert.equal(result.routing.selected.length, 2);
+  const traceResponse = await fetch(url + '/api/trace', { signal: AbortSignal.timeout(45000) });
+  assert.equal(traceResponse.status, 200);
+  const trace = await traceResponse.json(); assert.equal(trace.traces.length, 2);
+  for (const path of trace.traces) { assert.ok(Array.isArray(path.hops)); assert.equal(path.maxHops, 16); }
   const info = await (await fetch(url + '/api/app')).json(); assert.equal(info.portable, true);
   const shutdown = await fetch(url + '/api/shutdown', { method: 'POST', headers: { 'X-Detector-Token': info.shutdownToken, Origin: url } });
   assert.equal(shutdown.status, 200); await shutdown.json();
   const timeout = setTimeout(() => child.kill(), 10000);
   const [code] = await exited; clearTimeout(timeout); assert.equal(code, 0);
-  console.log(`PASS: standalone EXE in an isolated folder with Node.js absent from PATH; embedded assets, real Windows scan (${result.adapters.length} adapters), and clean shutdown verified.`);
+  console.log(`PASS: standalone EXE without Node.js on PATH; bilingual assets, real Windows scan (${result.adapters.length} adapters, ${result.routeTable.length} routes), IPv4/IPv6 traceroute (${trace.traces.map(path => path.status).join(', ')}), and clean shutdown verified.`);
 } finally {
   if (child && child.exitCode === null) { child.kill(); await once(child, 'exit').catch(() => {}); }
   await rm(temporary, { recursive: true, force: true });

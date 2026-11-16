@@ -3,11 +3,14 @@ import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { scan } from './lib/diagnostics.mjs';
 import { randomBytes } from 'node:crypto';
+import { tracePaths } from './lib/paths.mjs';
 
-const assets = { '/': ['index.html', 'text/html'], '/app.js': ['app.js', 'text/javascript'], '/style.css': ['style.css', 'text/css'] };
-export function createDetectorServer({ scanDevice = scan, onShutdown } = {}) {
+const assets = { '/': ['index.html', 'text/html'], '/app.js': ['app.js', 'text/javascript'], '/i18n.js': ['i18n.js', 'text/javascript'], '/style.css': ['style.css', 'text/css'] };
+export function createDetectorServer({ scanDevice = scan, traceDevice = tracePaths, onShutdown } = {}) {
 let pending;
 let latest;
+let pendingTrace;
+let latestTrace;
 const shutdownToken = onShutdown ? randomBytes(32).toString('hex') : null;
 const server = http.createServer(async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
@@ -29,6 +32,14 @@ const server = http.createServer(async (req, res) => {
   try {
     if (req.url === '/api/app') {
       res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify({ portable: Boolean(onShutdown), shutdownToken })); return;
+    }
+    if (req.url === '/api/trace') {
+      if (!latestTrace || Date.now() - latestTrace.created > 10000) {
+        pendingTrace ??= traceDevice().then(data => { latestTrace = { data, created: Date.now() }; return data; }).finally(() => { pendingTrace = null; });
+        const data = await pendingTrace;
+        res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify(data));
+      } else res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify(latestTrace.data));
+      return;
     }
     if (req.url === '/api/scan') {
       if (!latest || Date.now() - latest.created > 5000) {

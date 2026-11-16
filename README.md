@@ -1,6 +1,6 @@
 # IPv6 Detector
 
-A local Windows dashboard for inspecting this computer's network connections, device specifications and IPv6 readiness. The interface and reports are in English. No npm packages are required.
+A local Windows dashboard for inspecting this computer's network connections, device specifications, IPv6 readiness and network paths. Choose **English** or **日本語** in the language menu. No npm packages are required.
 
 ## Run the portable Windows application
 
@@ -37,6 +37,20 @@ If your organization blocks scripts or network inspection, ask its administrator
 - IPv6 binding, preferred local/global addresses, default route, DNS AAAA resolution and public IPv6 TLS checks.
 - A separate IPv4 baseline test, recommendations, active-adapter filter and downloadable JSON report.
 - Loading, failed-scan and empty states. Failed rescans preserve and identify the previous report.
+- English/Japanese interface, including checklist explanations, route observations and recommendations. The browser remembers the language on the same loopback host across portable launches. Device/adapter names and raw technical identifiers are not translated.
+- Windows-selected routes to the IPv4/IPv6 test targets, full ActiveStore route inventory in JSON, default routes and combined route/interface metrics.
+- Observations for equal-priority default routes, alternative or disconnected default routes, active virtual adapters and VPN-style /1 routes.
+- Separate IPv4/IPv6 traceroutes, with responding hop addresses, RTT samples, unknown hops and explicit partial-result states.
+
+## Network paths and interpretation
+
+**Run diagnostics** reads the local route table and asks Windows which route and source address it would use for each fixed Cloudflare test target. **Trace IPv4 / IPv6** separately runs Windows `tracert -d`, with up to 16 hops, a 600 ms per-probe wait and a 40-second process limit per address family. Both families run concurrently. This command sends ICMP diagnostic traffic; it does not change routes or adapter settings. The interface and JSON export timestamp the inventory and trace separately, because the network may change between them.
+
+The displayed direction is **device → gateway/router → upstream network → Cloudflare**. Traceroute from this device cannot determine the reverse ISP-to-device path or prove ownership of each hop. It does not automatically map each responding address to an ISP or autonomous system. Some routers do not answer probes, so an asterisk or missing reply is **unknown**, not proof of packet loss in forwarded traffic, a broken link or an unnecessary hop. Paths longer than the configured limit may be incomplete. See [Microsoft's tracert reference](https://learn.microsoft.com/windows-server/administration/windows-commands/tracert).
+
+Multiple default routes can provide valid backups. Lower combined route/interface metrics matter between otherwise equally specific routes; a more-specific prefix can take priority regardless of those default-route metrics. The selected-target cards use [Windows Find-NetRoute](https://learn.microsoft.com/powershell/module/nettcpip/find-netroute), rather than assuming the lowest default-route metric identifies the path for every destination. A tied lowest default-route metric is a review flag, not a confirmed fault. Virtual adapters and VPN-style /1 routes are informational observations. The app does not decide that a route is unnecessary and never deletes or disables one.
+
+Exported JSON retains canonical English diagnostic fields for compatibility and adds `reportLanguage`, localized assessment text, routing observations, and the latest separate `pathTrace` (if one was run). Exported reports can contain local/public hop IPs and routing details; review them before sharing.
 
 ## What the result means
 
@@ -52,7 +66,7 @@ The app inspects networks **connected to this computer**. It does not discover e
 
 The HTTP server binds only to `127.0.0.1` and validates the Host header. Browser assets are local, without remote fonts, analytics or third-party scripts. Diagnostic data stays in memory until restart; the app writes a report only when you choose Export. The portable version writes its bundled PowerShell collector to a unique temporary folder for each scan and removes that folder afterward. Forced termination or power loss can leave that temporary script behind. Reports contain network addresses, MAC addresses and device details, so review them before sharing. Cloudflare sees the source address of the connection probes; your configured resolver receives the DNS query.
 
-`server.mjs` serves the interface and `/api/scan`. `scripts/collect.ps1` collects Windows state as JSON. `lib/diagnostics.mjs` performs probes and evaluates evidence. The browser renders dynamic values as text. Concurrent scans share one collection; results are cached for five seconds to avoid repeated expensive commands. PowerShell collection times out after 45 seconds; TLS tests after five seconds and DNS after four seconds. Do not publish this service or bind it to a public network interface.
+`server.mjs` serves the interface, `/api/scan` and `/api/trace`. `scripts/collect.ps1` collects Windows state as JSON. `lib/diagnostics.mjs` performs probes and evaluates evidence; `lib/paths.mjs` analyzes route observations and runs/parses traceroutes. `public/i18n.js` contains Japanese translations. The browser renders dynamic values as text. Concurrent scans share one collection; results are cached for five seconds to avoid repeated expensive commands. Concurrent traceroutes share one operation with a ten-second cache. PowerShell collection times out after 45 seconds; TLS tests after five seconds and DNS after four seconds. Do not publish this service or bind it to a public network interface.
 
 ## Development plan and estimates
 
@@ -80,7 +94,7 @@ npm run test:portable
 
 The build produces `release/IPv6-Detector-Windows-x64/IPv6-Detector.exe`, supporting notices/instructions and `release/IPv6-Detector-Windows-x64.zip` with a ZIP checksum. The build configuration is generated in `build/sea-config.json`. `portable.mjs` is the executable entry point. The SEA virtual filesystem embeds the original modules and assets, so builds use the same diagnostic implementation as the source version. If changing the Node.js runtime, update `packaging/NODE-VERSION.txt` and obtain that exact release's official license/third-party notices first.
 
-The portable smoke test copies only the EXE to an isolated temporary directory, removes Node.js from `PATH`, starts without opening a browser, checks embedded resources, runs a real read-only device/network scan and requests authenticated shutdown. Its local inventory requires Windows permissions unavailable in some sandboxes. It verifies independence from the source tree and an installed Node.js command, but does not replace testing on a separate clean Windows device.
+The portable smoke test copies only the EXE to an isolated temporary directory, removes Node.js from `PATH`, starts without opening a browser, checks embedded bilingual resources, runs a real read-only device/network scan and IPv4/IPv6 traceroutes, then requests authenticated shutdown. Its local inventory requires Windows permissions unavailable in some sandboxes. It verifies independence from the source tree and an installed Node.js command, but does not replace testing on a separate clean Windows device.
 
 ## Checks
 

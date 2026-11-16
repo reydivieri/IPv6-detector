@@ -14,7 +14,7 @@ async function stop(server) { server.closeAllConnections(); if (server.listening
 test('serves local assets on the actual assigned port and rejects missing files', async () => {
   const { server, url } = await start();
   try {
-    for (const path of ['/', '/app.js', '/style.css']) { const result = await fetch(url + path); assert.equal(result.status, 200); assert.ok((await result.text()).length > 0); }
+    for (const path of ['/', '/app.js', '/style.css', '/i18n.js']) { const result = await fetch(url + path); assert.equal(result.status, 200); assert.ok((await result.text()).length > 0); }
     assert.equal((await fetch(url + '/missing')).status, 404);
     assert.equal((await fetch(url + '/', { method: 'POST' })).status, 405);
     const info = await (await fetch(url + '/api/app')).json();
@@ -45,6 +45,15 @@ test('failed scans can be retried', async () => {
   try {
     assert.equal((await fetch(url + '/api/scan')).status, 500);
     assert.deepEqual(await (await fetch(url + '/api/scan')).json(), { recovered: true });
+  } finally { await stop(server); }
+});
+test('traces are independent from scans, shared concurrently and cached briefly', async () => {
+  let calls = 0;
+  const { server, url } = await start({ traceDevice: async () => { calls++; await new Promise(resolve => setTimeout(resolve, 30)); return { traces: [] }; } });
+  try {
+    const responses = await Promise.all([fetch(url + '/api/trace'), fetch(url + '/api/trace')]);
+    for (const response of responses) assert.deepEqual(await response.json(), { traces: [] });
+    assert.equal((await fetch(url + '/api/trace')).status, 200); assert.equal(calls, 1);
   } finally { await stop(server); }
 });
 test('portable shutdown requires its session token and a matching origin', async () => {

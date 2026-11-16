@@ -13,7 +13,7 @@ if (process.versions.node !== licensedVersion) throw new Error(`Use Node.js ${li
 const output = join(root, 'release', 'IPv6-Detector-Windows-x64');
 await mkdir(output, { recursive: true });
 await mkdir(join(root, 'build'), { recursive: true });
-const files = ['server.mjs', 'lib/diagnostics.mjs', 'scripts/collect.ps1', 'public/index.html', 'public/style.css', 'public/app.js'];
+const files = ['server.mjs', 'lib/diagnostics.mjs', 'lib/paths.mjs', 'scripts/collect.ps1', 'public/index.html', 'public/style.css', 'public/app.js', 'public/i18n.js'];
 const config = {
   main: join(root, 'portable.mjs'), mainFormat: 'module',
   output: join(output, 'IPv6-Detector.exe'),
