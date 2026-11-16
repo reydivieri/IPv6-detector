@@ -1,0 +1,5 @@
+node_modules/
+*.log
+ipv6-report-*.json
+build/
+release/
